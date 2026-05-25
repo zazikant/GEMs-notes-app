@@ -111,17 +111,27 @@ function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
+  let i = 0;
+  while (i < line.length) {
     const char = line[i];
     if (char === '"') {
-      inQuotes = !inQuotes;
+      if (inQuotes) {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        inQuotes = true;
+      }
     } else if (char === ',' && !inQuotes) {
       result.push(current);
       current = '';
     } else {
       current += char;
     }
+    i++;
   }
   result.push(current);
   return result;
