@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppAction, Note, Tag, PALETTE } from '@/types';
-import { loadNotes, loadTags, seedIfEmpty, startPolling } from '@/lib/convex';
+import { loadNotes, loadTags, seedIfEmpty, subscribeToNotes, subscribeToTags } from '@/lib/supabase';
 
 const initialState: AppState = {
   notes: [],
@@ -113,13 +113,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_NOTES', payload: notes });
       dispatch({ type: 'SET_TAGS', payload: tags });
 
-      const poll = async () => {
-        const [newNotes, newTags] = await Promise.all([loadNotes(), loadTags()]);
-        dispatch({ type: 'SET_NOTES', payload: newNotes });
-        dispatch({ type: 'SET_TAGS', payload: newTags });
-      };
+      subscribeToNotes((notes) => {
+        dispatch({ type: 'SET_NOTES', payload: notes });
+      });
 
-      startPolling(poll, 2000);
+      subscribeToTags((tags) => {
+        dispatch({ type: 'SET_TAGS', payload: tags });
+      });
     };
 
     init();

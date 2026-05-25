@@ -4,7 +4,7 @@ import { useCallback, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Note, Tag, AppState } from '@/types';
 import { uid, fullDate, exportNotesToCSV, parseNotesFromCSV, parseCSVLine } from '@/lib/utils';
-import { addNote as convexAddNote, updateNote as convexUpdateNote, deleteNote as convexDeleteNote, addTag as convexAddTag, updateTag as convexUpdateTag, deleteTag as convexDeleteTag } from '@/lib/convex';
+import { addNote as sbAddNote, updateNote as sbUpdateNote, deleteNote as sbDeleteNote, addTag as sbAddTag, updateTag as sbUpdateTag, deleteTag as sbDeleteTag } from '@/lib/supabase';
 
 export function useNotes() {
   const { state, dispatch, getFilteredNotes, getTag, getTagColor, countFor } = useAppContext();
@@ -21,7 +21,7 @@ export function useNotes() {
       created: Date.now(),
     };
     dispatch({ type: 'ADD_NOTE', payload: newNote });
-    await convexAddNote(newNote);
+    await sbAddNote(newNote);
     if (typeof window !== 'undefined' && window.innerWidth <= 768) {
       dispatch({ type: 'SET_MOBILE_PANEL', payload: 'editor' });
     }
@@ -50,7 +50,7 @@ export function useNotes() {
         ticker: updates.ticker !== undefined ? updates.ticker.toUpperCase().trim() : note.ticker,
       };
       dispatch({ type: 'UPDATE_NOTE', payload: updated });
-      await convexUpdateNote(updated);
+      await sbUpdateNote(updated);
     },
     [state.activeId, state.notes, dispatch]
   );
@@ -71,7 +71,7 @@ export function useNotes() {
       if (state.activeId) {
         const note = state.notes.find(n => n.id === state.activeId);
         if (note) {
-          convexUpdateNote(note);
+          sbUpdateNote(note);
         }
       }
     }, 600);
@@ -80,7 +80,7 @@ export function useNotes() {
   const deleteNote = useCallback(
     async (id: string) => {
       dispatch({ type: 'DELETE_NOTE', payload: id });
-      await convexDeleteNote(id);
+      await sbDeleteNote(id);
     },
     [dispatch]
   );
@@ -109,7 +109,7 @@ export function useNotes() {
 
       const updated = { ...note, tags: newTags };
       dispatch({ type: 'UPDATE_NOTE', payload: updated });
-      await convexUpdateNote(updated);
+      await sbUpdateNote(updated);
     },
     [state.activeId, state.notes, dispatch]
   );
@@ -122,11 +122,11 @@ export function useNotes() {
     const { notes: newNotes, newTags, skipped } = parseNotesFromCSV(csv, state.tags, state.notes);
     for (const tag of newTags) {
       dispatch({ type: 'ADD_TAG', payload: tag });
-      await convexAddTag(tag);
+      await sbAddTag(tag);
     }
     for (const note of newNotes) {
       dispatch({ type: 'ADD_NOTE', payload: note });
-      await convexAddNote(note);
+      await sbAddNote(note);
     }
     return skipped;
   }, [state.tags, state.notes, dispatch]);
@@ -154,7 +154,7 @@ export function useNotes() {
     const toDelete = state.notes.filter(n => keysToDelete.has(`${n.ticker}:${n.body}`));
     for (const note of toDelete) {
       dispatch({ type: 'DELETE_NOTE', payload: note.id });
-      await convexDeleteNote(note.id);
+      await sbDeleteNote(note.id);
     }
     return toDelete.length;
   }, [state.notes, dispatch]);
@@ -197,15 +197,15 @@ export function useNotes() {
       dispatch({ type: 'SET_MOBILE_PANEL', payload: panel }),
     addTag: async (tag: Tag) => {
       dispatch({ type: 'ADD_TAG', payload: tag });
-      await convexAddTag(tag);
+      await sbAddTag(tag);
     },
     updateTag: async (tag: Tag) => {
       dispatch({ type: 'UPDATE_TAG', payload: tag });
-      await convexUpdateTag(tag);
+      await sbUpdateTag(tag);
     },
     deleteTag: async (tagId: string) => {
       dispatch({ type: 'DELETE_TAG', payload: tagId });
-      await convexDeleteTag(tagId);
+      await sbDeleteTag(tagId);
     },
     exportAllNotes,
     importNotesFromCSV,
