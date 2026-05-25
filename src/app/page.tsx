@@ -51,7 +51,6 @@ export default function Home() {
 
   // Confirm delete note
   const handleConfirmDelete = useCallback(() => {
-    console.log('Confirm delete, activeId:', activeId);
     if (activeId) {
       deleteNote(activeId);
       setShowDeleteModal(false);

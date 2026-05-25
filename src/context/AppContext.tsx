@@ -33,12 +33,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'DELETE_NOTE': {
       const remaining = state.notes.filter(n => n.id !== action.payload);
-      const newActiveId = remaining.length > 0 ? remaining[0].id : null;
-      console.log('DELETE_NOTE:', { removed: action.payload, remaining: remaining.length, newActiveId });
       return {
         ...state,
         notes: remaining,
-        activeId: newActiveId,
+        activeId: remaining.length > 0 ? remaining[0].id : null,
       };
     }
     case 'SET_ACTIVE_ID':
@@ -122,11 +120,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Persist notes when they change
   useEffect(() => {
-    if (state.notes.length > 0) {
-      saveNotes(state.notes);
-    }
+    saveNotes(state.notes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [state.notes]);
 
   // Persist tags when they change
   useEffect(() => {
