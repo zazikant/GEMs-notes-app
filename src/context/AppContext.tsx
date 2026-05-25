@@ -123,7 +123,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (state.notes.length > 0) {
       saveNotes(state.notes);
     }
-  }, [state.notes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist tags when they change
   useEffect(() => {
@@ -218,25 +219,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const countFor = useCallback(
     (filter: AppState['currentFilter']): number => {
-      const savedFilter = state.currentFilter;
-      const savedFrom = state.customFrom;
-      const savedTo = state.customTo;
+    const { notes, customFrom, customTo } = state;
+    const now = Date.now();
+    let filtered = [...notes];
 
-      // Temporarily apply filter
-      dispatch({ type: 'SET_FILTER', payload: filter });
-      if (filter === 'custom') {
-        dispatch({ type: 'SET_CUSTOM_RANGE', payload: { from: savedFrom, to: savedTo } });
-      }
+    // Apply date filter only (for count, don't persist)
+    if (filter === 'today') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(n => n.created >= start.getTime());
+    } else if (filter === 'week') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - start.getDay());
+      filtered = filtered.filter(n => n.created >= start.getTime());
+    } else if (filter === 'month') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setDate(1);
+      filtered = filtered.filter(n => n.created >= start.getTime());
+    } else if (filter === 'quarter') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setMonth(Math.floor(start.getMonth() / 3) * 3, 1);
+      filtered = filtered.filter(n => n.created >= start.getTime());
+    } else if (filter === 'year') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      start.setMonth(0, 1);
+      filtered = filtered.filter(n => n.created >= start.getTime());
+    } else if (filter === 'custom' && (customFrom || customTo)) {
+      filtered = filtered.filter(n => {
+        const d = new Date(n.created);
+        d.setHours(0, 0, 0, 0);
+        const dayStart = d.getTime();
+        if (customFrom && dayStart < customFrom) return false;
+        if (customTo && dayStart > customTo) return false;
+        return true;
+      });
+    }
 
-      const count = getFilteredNotes().length;
-
-      // Restore original filter
-      dispatch({ type: 'SET_FILTER', payload: savedFilter });
-      dispatch({ type: 'SET_CUSTOM_RANGE', payload: { from: savedFrom, to: savedTo } });
-
-      return count;
-    },
-    [state.currentFilter, state.customFrom, state.customTo, getFilteredNotes]
+    return filtered.length;
+  },
+    [state]
   );
 
   return (
