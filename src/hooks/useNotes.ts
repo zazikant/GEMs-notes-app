@@ -9,8 +9,15 @@ import { addNote as sbAddNote, updateNote as sbUpdateNote, deleteNote as sbDelet
 export function useNotes() {
   const { state, dispatch, getFilteredNotes, getTag, getTagColor, countFor } = useAppContext();
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null);
+  const isDirty = useRef(false);
+  const lastSavedNote = useRef<string>('');
 
   const activeNote = state.notes.find(n => n.id === state.activeId) || null;
+
+  // Check if the current note has unsaved changes
+  const getIsDirty = useCallback((): boolean => {
+    return isDirty.current;
+  }, []);
 
   const createNote = useCallback(async () => {
     const newNote: Note = {
@@ -22,6 +29,8 @@ export function useNotes() {
     };
     dispatch({ type: 'ADD_NOTE', payload: newNote });
     await sbAddNote(newNote);
+    isDirty.current = false;
+    lastSavedNote.current = JSON.stringify(newNote);
     if (typeof window !== 'undefined' && window.innerWidth <= 768) {
       dispatch({ type: 'SET_MOBILE_PANEL', payload: 'editor' });
     }
@@ -30,16 +39,23 @@ export function useNotes() {
 
   const openNote = useCallback(
     (id: string) => {
+      // Reset dirty state when switching notes
+      isDirty.current = false;
+      const note = state.notes.find(n => n.id === id);
+      if (note) {
+        lastSavedNote.current = JSON.stringify(note);
+      }
       dispatch({ type: 'SET_ACTIVE_ID', payload: id });
       if (typeof window !== 'undefined' && window.innerWidth <= 768) {
         dispatch({ type: 'SET_MOBILE_PANEL', payload: 'editor' });
       }
     },
-    [dispatch]
+    [state.notes, dispatch]
   );
 
+  // Update local state ONLY — does NOT persist to Supabase
   const updateCurrentNote = useCallback(
-    async (updates: Partial<Pick<Note, 'ticker' | 'body' | 'tags'>>) => {
+    (updates: Partial<Pick<Note, 'ticker' | 'body' | 'tags'>>) => {
       if (!state.activeId) return;
       const note = state.notes.find(n => n.id === state.activeId);
       if (!note) return;
@@ -49,38 +65,76 @@ export function useNotes() {
         ...updates,
         ticker: updates.ticker !== undefined ? updates.ticker : note.ticker,
       };
+
+      // Mark as dirty since we changed local state without persisting
+      isDirty.current = true;
+
       dispatch({ type: 'UPDATE_NOTE', payload: updated });
-      await sbUpdateNote(updated);
     },
     [state.activeId, state.notes, dispatch]
   );
 
-  const saveCurrentNote = useCallback(() => {
+  // Explicitly save the current note to Supabase
+  const saveCurrentNote = useCallback(async () => {
     if (!state.activeId) return;
+    const note = state.notes.find(n => n.id === state.activeId);
+    if (!note) return;
+
+    // Clear any pending auto-save
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = null;
     }
-  }, [state.activeId]);
 
+    await sbUpdateNote(note);
+    isDirty.current = false;
+    lastSavedNote.current = JSON.stringify(note);
+  }, [state.activeId, state.notes]);
+
+  // Schedule a debounced auto-save — only persists if dirty
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimer.current) {
       clearTimeout(autoSaveTimer.current);
     }
-    autoSaveTimer.current = setTimeout(() => {
-      if (state.activeId) {
+    autoSaveTimer.current = setTimeout(async () => {
+      if (state.activeId && isDirty.current) {
         const note = state.notes.find(n => n.id === state.activeId);
         if (note) {
-          sbUpdateNote(note);
+          await sbUpdateNote(note);
+          isDirty.current = false;
+          lastSavedNote.current = JSON.stringify(note);
         }
       }
-    }, 600);
+    }, 2000); // 2 second debounce — longer than before to let user type freely
   }, [state.activeId, state.notes]);
+
+  // Discard unsaved changes — revert to last saved state
+  const discardChanges = useCallback(() => {
+    if (!state.activeId) return;
+
+    // Clear any pending auto-save
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+
+    try {
+      const saved = JSON.parse(lastSavedNote.current) as Note;
+      if (saved && saved.id === state.activeId) {
+        dispatch({ type: 'UPDATE_NOTE', payload: saved });
+        isDirty.current = false;
+      }
+    } catch {
+      // If we can't parse the saved state, just mark as clean
+      isDirty.current = false;
+    }
+  }, [state.activeId, dispatch]);
 
   const deleteNote = useCallback(
     async (id: string) => {
       dispatch({ type: 'DELETE_NOTE', payload: id });
       await sbDeleteNote(id);
+      isDirty.current = false;
     },
     [dispatch]
   );
@@ -108,8 +162,12 @@ export function useNotes() {
         : [...note.tags, tagId];
 
       const updated = { ...note, tags: newTags };
+
+      // Tag toggles persist immediately (considered a deliberate action)
       dispatch({ type: 'UPDATE_NOTE', payload: updated });
       await sbUpdateNote(updated);
+      isDirty.current = false;
+      lastSavedNote.current = JSON.stringify(updated);
     },
     [state.activeId, state.notes, dispatch]
   );
@@ -174,11 +232,13 @@ export function useNotes() {
     filteredNotes: getFilteredNotes(),
     getTag,
     getTagColor,
+    isDirty: getIsDirty,
     createNote,
     openNote,
     updateCurrentNote,
     saveCurrentNote,
     scheduleAutoSave,
+    discardChanges,
     deleteNote,
     copyNote,
     toggleEditorTag,

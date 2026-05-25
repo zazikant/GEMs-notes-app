@@ -23,6 +23,7 @@ export default function Home() {
     updateTag,
     deleteTag,
     getTag,
+    saveCurrentNote,
   } = useNotes();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -66,7 +67,7 @@ export default function Home() {
     }
   }, [activeId, copyNote]);
 
-  // Handle save
+  // Handle save — now just shows confirmation toast (actual save is in Editor via saveCurrentNote)
   const handleSave = useCallback(() => {
     showToast('Note saved');
   }, []);
@@ -128,7 +129,7 @@ export default function Home() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        handleSave();
+        saveCurrentNote().then(() => handleSave());
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
         e.preventDefault();
@@ -143,7 +144,7 @@ export default function Home() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleNew, handleSave]);
+  }, [handleNew, handleSave, saveCurrentNote]);
 
   // Handle resize for mobile state initialization
   useEffect(() => {

@@ -422,6 +422,10 @@ body {
 .fmt-btn-danger:hover { background: #faeaea; border-color: #c0392b; }
 .fmt-btn-save { background: var(--accent); color: #fff; border-color: var(--accent); }
 .fmt-btn-save:hover { background: #244f26; }
+.fmt-btn-dirty { animation: pulse-dirty 2s ease-in-out infinite; }
+.fmt-btn-discard { color: #8a8680; font-size: 11px; }
+.fmt-btn-discard:hover { color: #c0392b; background: #faeaea; border-color: #c0392b; }
+@keyframes pulse-dirty { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 .fmt-separator { width: 1px; height: 18px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
 .editor-textarea::-webkit-scrollbar { width: 4px; }
 .editor-textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }

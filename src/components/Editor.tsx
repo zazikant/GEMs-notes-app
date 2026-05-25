@@ -77,6 +77,9 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     updateCurrentNote,
     scheduleAutoSave,
     toggleEditorTag,
+    isDirty,
+    saveCurrentNote,
+    discardChanges,
   } = useNotes();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const tickerRef = useRef<HTMLTextAreaElement>(null);
@@ -317,9 +320,10 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
         </div>
         <div className="editor-toolbar-right">
           <span className="toolbar-word-count">{wordCount}w</span>
+          {isDirty() && <button className="fmt-btn fmt-btn-discard" title="Discard unsaved changes" onClick={discardChanges}>Discard</button>}
           <button className="fmt-btn fmt-btn-action" title="Copy note" onClick={onCopy}>Copy</button>
           <button className="fmt-btn fmt-btn-danger" title="Delete note" onClick={onDelete}>Delete</button>
-          <button className="fmt-btn fmt-btn-save" title="Save note (Ctrl+S)" onClick={onSave}>Save</button>
+          <button className={`fmt-btn fmt-btn-save ${isDirty() ? 'fmt-btn-dirty' : ''}`} title="Save note (Ctrl+S)" onClick={async () => { await saveCurrentNote(); onSave(); }}>{isDirty() ? 'Save •' : 'Saved'}</button>
         </div>
       </div>
       <div className="editor-body">
