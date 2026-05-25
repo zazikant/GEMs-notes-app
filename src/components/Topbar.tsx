@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 import { ToastManager, showToast } from '@/components/Toast';
+import { parseNotesFromCSV } from '@/lib/utils';
 
 interface TopbarProps {
   onDelete: () => void;
@@ -10,24 +11,38 @@ interface TopbarProps {
 }
 
 export function Topbar({ onDelete, onNew }: TopbarProps) {
-  const { searchQuery, setSearchQuery, mobilePanel, setMobilePanel, exportAllNotes, importNotesFromCSV } = useNotes();
+  const { searchQuery, setSearchQuery, mobilePanel, setMobilePanel, exportAllNotes, importNotesFromCSV, deleteMatchingNotes } = useNotes();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const deleteInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDeleteClick = () => {
+    deleteInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isDelete: boolean) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       const csv = event.target?.result as string;
-      const skipped = importNotesFromCSV(csv);
-      if (skipped > 0) {
-        showToast(`Imported - ${skipped} duplicate(s) skipped`);
+      if (isDelete) {
+        const count = deleteMatchingNotes(csv);
+        if (count > 0) {
+          showToast(`Deleted ${count} matching note(s)`);
+        } else {
+          showToast('No matching notes to delete');
+        }
       } else {
-        showToast('Notes imported');
+        const skipped = importNotesFromCSV(csv);
+        if (skipped > 0) {
+          showToast(`Imported - ${skipped} duplicate(s) skipped`);
+        } else {
+          showToast('Notes imported');
+        }
       }
     };
     reader.readAsText(file);
@@ -49,7 +64,14 @@ export function Topbar({ onDelete, onNew }: TopbarProps) {
         type="file"
         accept=".csv"
         style={{ display: 'none' }}
-        onChange={handleFileChange}
+        onChange={e => handleFileChange(e, false)}
+      />
+      <input
+        ref={deleteInputRef}
+        type="file"
+        accept=".csv"
+        style={{ display: 'none' }}
+        onChange={e => handleFileChange(e, true)}
       />
       <button className="mobile-back-btn" onClick={handleMobileBack}>
         ‹ <span>Notes</span>
@@ -70,6 +92,9 @@ export function Topbar({ onDelete, onNew }: TopbarProps) {
       <div className="topbar-actions">
         <button className="btn btn-ghost" onClick={onDelete}>
           Delete
+        </button>
+        <button className="btn btn-ghost" onClick={handleDeleteClick} title="Delete notes matching CSV">
+          Delete CSV
         </button>
         <button className="btn btn-ghost" onClick={handleImportClick} title="Import notes from CSV">
           Import CSV

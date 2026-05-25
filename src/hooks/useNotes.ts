@@ -118,6 +118,22 @@ export function useNotes() {
     return skipped;
   }, [state.tags, state.notes, dispatch]);
 
+  const deleteMatchingNotes = useCallback((csv: string): number => {
+    const lines = csv.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return 0;
+    const keysToDelete = new Set<string>();
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts.length < 4) continue;
+      const ticker = parts[0].trim().toUpperCase();
+      const body = parts[3].replace(/""/g, '"').trim();
+      keysToDelete.add(`${ticker}:${body}`);
+    }
+    const toDelete = state.notes.filter(n => keysToDelete.has(`${n.ticker}:${n.body}`));
+    toDelete.forEach(note => dispatch({ type: 'DELETE_NOTE', payload: note.id }));
+    return toDelete.length;
+  }, [state.notes, dispatch]);
+
   return {
     notes: state.notes,
     tags: state.tags,
@@ -159,6 +175,7 @@ export function useNotes() {
     deleteTag: (tagId: string) => dispatch({ type: 'DELETE_TAG', payload: tagId }),
     exportAllNotes,
     importNotesFromCSV,
+    deleteMatchingNotes,
     countFor,
   };
 }
