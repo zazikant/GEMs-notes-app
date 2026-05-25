@@ -80,34 +80,27 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[], existingNote
     const parts = parseCSVLine(line);
     if (parts.length < 4) continue;
 
-    let ticker: string;
-    let tagStr: string;
-    let body: string;
-
-    if (parts.length >= 5) {
-      ticker = parts[0].trim().toUpperCase();
-      tagStr = parts[3].trim();
-      body = parts[4].replace(/""/g, '"').trim();
-    } else {
-      ticker = parts[0].trim().toUpperCase();
-      tagStr = parts[2].trim();
-      body = parts[3].replace(/""/g, '"').trim();
-    }
+    const ticker = parts[0].trim().toUpperCase();
+    const tagStr = parts[parts.length >= 5 ? 3 : 2].trim();
+    const body = parts[parts.length >= 5 ? 4 : 3].replace(/""/g, '"').trim();
 
     const noteTags: string[] = [];
 
-    tagStr.split(';').map(t => t.trim()).filter(Boolean).forEach(name => {
-      const lower = name.toLowerCase();
-      if (tagNameToId.has(lower)) {
-        noteTags.push(tagNameToId.get(lower)!);
-      } else if (!newTagNames.has(lower)) {
-        const newId = 'tag_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-        newTagNames.set(lower, newId);
-        noteTags.push(newId);
-      } else {
-        noteTags.push(newTagNames.get(lower)!);
-      }
-    });
+    if (tagStr) {
+      tagStr.split(';').map(t => t.trim()).filter(Boolean).forEach(name => {
+        const lower = name.toLowerCase();
+        if (tagNameToId.has(lower)) {
+          noteTags.push(tagNameToId.get(lower)!);
+        } else if (!newTagNames.has(lower)) {
+          const newId = 'tag_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+          newTagNames.set(lower, newId);
+          tagNameToId.set(lower, newId);
+          noteTags.push(newId);
+        } else {
+          noteTags.push(newTagNames.get(lower)!);
+        }
+      });
+    }
 
     const key = `${ticker}:${body}`;
     if (existingKeys.has(key)) continue;
