@@ -98,7 +98,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
             <button className="btn btn-ghost" onClick={onCopy}>
               Copy
             </button>
-            <button className="btn btn-danger mobile-delete-btn" onClick={onDelete}>
+            <button className="btn btn-danger" onClick={onDelete}>
               Delete
             </button>
             <button className="btn btn-primary" onClick={onSave}>

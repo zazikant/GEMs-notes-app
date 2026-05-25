@@ -627,7 +627,7 @@ body {
     min-width: 70px;
   }
 
-  .mobile-delete-btn { display: inline-flex !important; }
+  .mobile-delete-btn { display: inline-flex; }
 
   /* Modals full-width on mobile */
   .modal-box { width: calc(100vw - 2rem); max-width: 340px; }
