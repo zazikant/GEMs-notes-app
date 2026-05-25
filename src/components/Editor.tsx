@@ -192,6 +192,11 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     }
   }, [applyBold, applyItalic, applyList, applyBulletList]);
 
+  // Word count
+  const wordCount = activeNote?.body.trim()
+    ? activeNote.body.trim().split(/\s+/).length
+    : 0;
+
   if (!activeNote) {
     return (
       <div className="editor-panel">
@@ -265,43 +270,57 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           );
         })}
       </div>
-      <div className="editor-format-bar">
-        <button
-          className="fmt-btn"
-          title="Bold (Ctrl+B)"
-          onClick={() => { if (previewMode) setPreviewMode(false); applyBold(); }}
-        >
-          <strong>B</strong>
-        </button>
-        <button
-          className="fmt-btn"
-          title="Italic (Ctrl+I)"
-          onClick={() => { if (previewMode) setPreviewMode(false); applyItalic(); }}
-        >
-          <em>I</em>
-        </button>
-        <button
-          className="fmt-btn"
-          title="Numbered list (Ctrl+Shift+L)"
-          onClick={() => { if (previewMode) setPreviewMode(false); applyList(); }}
-        >
-          <span style={{ fontFamily: 'monospace' }}>1.</span>
-        </button>
-        <button
-          className="fmt-btn"
-          title="Bullet list (Ctrl+Shift+U)"
-          onClick={() => { if (previewMode) setPreviewMode(false); applyBulletList(); }}
-        >
-          <span style={{ fontFamily: 'monospace' }}>&#8226;</span>
-        </button>
-        <div className="fmt-separator" />
-        <button
-          className={`fmt-btn ${previewMode ? 'fmt-btn-active' : ''}`}
-          title={previewMode ? 'Edit mode' : 'Preview mode'}
-          onClick={() => setPreviewMode(!previewMode)}
-        >
-          {previewMode ? '✎ Edit' : '👁 Preview'}
-        </button>
+      {/* Toolbar: format buttons + action buttons all in one bar */}
+      <div className="editor-toolbar">
+        <div className="editor-toolbar-left">
+          <button
+            className="fmt-btn"
+            title="Bold (Ctrl+B)"
+            onMouseDown={e => e.preventDefault()} // prevent stealing textarea focus
+            onClick={() => { if (previewMode) setPreviewMode(false); applyBold(); }}
+          >
+            <strong>B</strong>
+          </button>
+          <button
+            className="fmt-btn"
+            title="Italic (Ctrl+I)"
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => { if (previewMode) setPreviewMode(false); applyItalic(); }}
+          >
+            <em>I</em>
+          </button>
+          <button
+            className="fmt-btn"
+            title="Numbered list (Ctrl+Shift+L)"
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => { if (previewMode) setPreviewMode(false); applyList(); }}
+          >
+            <span style={{ fontFamily: 'monospace' }}>1.</span>
+          </button>
+          <button
+            className="fmt-btn"
+            title="Bullet list (Ctrl+Shift+U)"
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => { if (previewMode) setPreviewMode(false); applyBulletList(); }}
+          >
+            <span style={{ fontFamily: 'monospace' }}>&#8226;</span>
+          </button>
+          <div className="fmt-separator" />
+          <button
+            className={`fmt-btn ${previewMode ? 'fmt-btn-active' : ''}`}
+            title={previewMode ? 'Edit mode' : 'Preview mode'}
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => setPreviewMode(!previewMode)}
+          >
+            {previewMode ? '✎ Edit' : '👁 Preview'}
+          </button>
+        </div>
+        <div className="editor-toolbar-right">
+          <span className="toolbar-word-count">{wordCount}w</span>
+          <button className="fmt-btn fmt-btn-action" title="Copy note" onClick={onCopy}>Copy</button>
+          <button className="fmt-btn fmt-btn-danger" title="Delete note" onClick={onDelete}>Delete</button>
+          <button className="fmt-btn fmt-btn-save" title="Save note (Ctrl+S)" onClick={onSave}>Save</button>
+        </div>
       </div>
       <div className="editor-body">
         {previewMode ? (
