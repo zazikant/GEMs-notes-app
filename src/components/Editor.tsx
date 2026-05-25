@@ -84,6 +84,9 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
+          onKeyDown={e => {
+            e.stopPropagation();
+          }}
           onChange={e => {
             updateCurrentNote({ ticker: e.target.value.toUpperCase() });
             scheduleAutoSave();
