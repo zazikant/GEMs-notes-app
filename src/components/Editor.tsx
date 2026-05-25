@@ -20,17 +20,6 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
   } = useNotes();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  if (!activeNote) {
-    return (
-      <div className="editor-panel">
-        <div className="empty-state">
-          <div className="empty-icon">📝</div>
-          <div className="empty-msg">Select a note or create a new one</div>
-        </div>
-      </div>
-    );
-  }
-
   const applyBold = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -53,7 +42,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     const end = ta.selectionEnd;
     const selected = ta.value.substring(start, end);
     const lines = selected.split('\n');
-    let numbered = lines.map((line, i) => (i === 0 ? `1. ${line}` : `${i + 1}. ${line}`)).join('\n');
+    const numbered = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
     const newText = ta.value.substring(0, start) + numbered + ta.value.substring(end);
     updateCurrentNote({ body: newText });
     scheduleAutoSave();
@@ -63,7 +52,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     }, 0);
   }, [updateCurrentNote, scheduleAutoSave]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleEditorKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
       e.preventDefault();
       applyBold();
@@ -73,6 +62,17 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       applyList();
     }
   }, [applyBold, applyList]);
+
+  if (!activeNote) {
+    return (
+      <div className="editor-panel">
+        <div className="empty-state">
+          <div className="empty-icon">📝</div>
+          <div className="empty-msg">Select a note or create a new one</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="editor-panel">
@@ -84,9 +84,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          onKeyDown={e => {
-            e.stopPropagation();
-          }}
+          onKeyDown={e => e.stopPropagation()}
           onChange={e => {
             updateCurrentNote({ ticker: e.target.value.toUpperCase() });
             scheduleAutoSave();
@@ -149,7 +147,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
             updateCurrentNote({ body: e.target.value });
             scheduleAutoSave();
           }}
-          onKeyDown={handleKeyDown}
+          onKeyDown={handleEditorKeyDown}
         />
       </div>
     </div>
