@@ -70,7 +70,7 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[], existingNote
 
   const tagNameToId = new Map(existingTags.map(t => [t.name.toLowerCase(), t.id]));
   const existingKeys = new Set(existingNotes.map(n => `${n.ticker}:${n.body}`));
-  const tagNames = new Set<string>();
+  const newTagNames = new Map<string, string>();
   const notes: Note[] = [];
 
   for (let i = 1; i < lines.length; i++) {
@@ -100,8 +100,12 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[], existingNote
       const lower = name.toLowerCase();
       if (tagNameToId.has(lower)) {
         noteTags.push(tagNameToId.get(lower)!);
+      } else if (!newTagNames.has(lower)) {
+        const newId = 'tag_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        newTagNames.set(lower, newId);
+        noteTags.push(newId);
       } else {
-        tagNames.add(name);
+        noteTags.push(newTagNames.get(lower)!);
       }
     });
 
@@ -118,9 +122,9 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[], existingNote
     });
   }
 
-  const newTags: Tag[] = Array.from(tagNames).map(name => ({
-    id: 'tag_' + Math.random().toString(36).slice(2) + Date.now().toString(36),
-    name,
+  const newTags: Tag[] = Array.from(newTagNames.entries()).map(([name, id]) => ({
+    id,
+    name: name.charAt(0).toUpperCase() + name.slice(1),
     color: Math.floor(Math.random() * 10),
   }));
 
