@@ -1,11 +1,46 @@
 'use client';
 
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 import { PALETTE, Note } from '@/types';
 import { relDate } from '@/lib/utils';
 
+const PAGE_SIZE = 20;
+
 export function NotesPanel() {
   const { filteredNotes, activeId, openNote, sortMode, setSortMode } = useNotes();
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [isLoading, setIsLoading] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [filteredNotes.length, sortMode]);
+
+  const loadMore = useCallback(() => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filteredNotes.length));
+      setIsLoading(false);
+    }, 150);
+  }, [filteredNotes.length]);
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && visibleCount < filteredNotes.length && !isLoading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [visibleCount, filteredNotes.length, isLoading, loadMore]);
+
+  const visibleNotes = filteredNotes.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredNotes.length;
 
   return (
     <div className="notes-panel">
@@ -30,9 +65,25 @@ export function NotesPanel() {
             No notes found
           </div>
         ) : (
-          filteredNotes.map(note => (
-            <NoteCard key={note.id} note={note} isActive={note.id === activeId} onClick={() => openNote(note.id)} />
-          ))
+          <>
+            {visibleNotes.map(note => (
+              <NoteCard key={note.id} note={note} isActive={note.id === activeId} onClick={() => openNote(note.id)} />
+            ))}
+            {hasMore && (
+              <div ref={loadMoreRef} className="load-more-trigger">
+                {isLoading && (
+                  <div className="load-more-spinner">
+                    <span>Loading...</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {!hasMore && filteredNotes.length > PAGE_SIZE && (
+              <div className="all-loaded-msg">
+                All {filteredNotes.length} notes loaded
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

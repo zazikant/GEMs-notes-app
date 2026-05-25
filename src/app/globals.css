@@ -339,6 +339,10 @@ body {
 .note-tags-row { display: flex; gap: 4px; flex-wrap: wrap; }
 .tag-pill { font-family: var(--font-syne), 'Syne', sans-serif; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.04em; }
 
+.load-more-trigger { padding: 16px; text-align: center; }
+.load-more-spinner { font-family: var(--font-syne), 'Syne', sans-serif; font-size: 12px; color: var(--muted); }
+.all-loaded-msg { padding: 12px; text-align: center; font-family: var(--font-syne), 'Syne', sans-serif; font-size: 11px; color: var(--muted); }
+
 /* ── Editor ── */
 .editor-panel {
   flex: 1;
