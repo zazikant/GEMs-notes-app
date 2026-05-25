@@ -106,6 +106,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (initialized.current) return;
     initialized.current = true;
 
+    let unsubscribeNotes: (() => void) | null = null;
+    let unsubscribeTags: (() => void) | null = null;
+
     const init = async () => {
       await seedIfEmpty();
 
@@ -113,16 +116,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_NOTES', payload: notes });
       dispatch({ type: 'SET_TAGS', payload: tags });
 
-      subscribeToNotes((notes) => {
+      unsubscribeNotes = subscribeToNotes((notes) => {
         dispatch({ type: 'SET_NOTES', payload: notes });
       });
 
-      subscribeToTags((tags) => {
+      unsubscribeTags = subscribeToTags((tags) => {
         dispatch({ type: 'SET_TAGS', payload: tags });
       });
     };
 
     init();
+
+    return () => {
+      if (unsubscribeNotes) unsubscribeNotes();
+      if (unsubscribeTags) unsubscribeTags();
+    };
   }, []);
 
   const getFilteredNotes = useCallback((): Note[] => {

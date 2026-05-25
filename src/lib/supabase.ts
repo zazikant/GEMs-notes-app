@@ -102,8 +102,6 @@ export function subscribeToNotes(callback: (notes: Note[]) => void): () => void 
     })
     .subscribe();
 
-  loadNotes().then(callback);
-
   return () => {
     supabase.removeChannel(channel);
   };
@@ -116,8 +114,6 @@ export function subscribeToTags(callback: (tags: Tag[]) => void): () => void {
       loadTags().then(callback);
     })
     .subscribe();
-
-  loadTags().then(callback);
 
   return () => {
     supabase.removeChannel(channel);
