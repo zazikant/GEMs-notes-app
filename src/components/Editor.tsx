@@ -108,6 +108,32 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     }
   }, [activeNote?.id]);
 
+  // Scroll the textarea so the cursor is visible above the bottom mobile nav
+  const scrollCursorIntoView = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    // Use a small delay to let React update the value first
+    requestAnimationFrame(() => {
+      const cursorPos = ta.selectionStart;
+      const textBeforeCursor = ta.value.substring(0, cursorPos);
+      const linesBeforeCursor = textBeforeCursor.split('\n').length;
+      const lineHeight = parseFloat(getComputedStyle(ta).lineHeight) || 24;
+      const paddingTop = parseFloat(getComputedStyle(ta).paddingTop) || 16;
+      // Calculate the pixel position of the cursor from the top of the content
+      const cursorY = paddingTop + (linesBeforeCursor - 1) * lineHeight;
+      // The visible height of the textarea (viewport)
+      const visibleHeight = ta.clientHeight;
+      // We want the cursor to be at least 80px above the bottom of the visible area
+      // to clear the mobile bottom nav
+      const bottomBuffer = 80;
+      const maxScrollTop = cursorY - visibleHeight + bottomBuffer;
+      // If the cursor is below the safe visible area, scroll down
+      if (ta.scrollTop < maxScrollTop) {
+        ta.scrollTop = maxScrollTop;
+      }
+    });
+  }, []);
+
   const applyBold = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -197,6 +223,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           scheduleAutoSave();
           setTimeout(() => {
             ta.selectionStart = ta.selectionEnd = before.length + 1;
+            scrollCursorIntoView();
           }, 0);
           return;
         }
@@ -212,6 +239,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
         setTimeout(() => {
           const newPos = before.length + 1 + nextPrefix.length;
           ta.selectionStart = ta.selectionEnd = newPos;
+          scrollCursorIntoView();
         }, 0);
         return;
       }
@@ -230,6 +258,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           scheduleAutoSave();
           setTimeout(() => {
             ta.selectionStart = ta.selectionEnd = before.length + 1;
+            scrollCursorIntoView();
           }, 0);
           return;
         }
@@ -243,9 +272,16 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
         setTimeout(() => {
           const newPos = before.length + 1 + prefix.length;
           ta.selectionStart = ta.selectionEnd = newPos;
+          scrollCursorIntoView();
         }, 0);
         return;
       }
+
+      // Plain Enter (not in a list) — still need to scroll cursor into safe view
+      // Let the default Enter happen, then scroll after
+      setTimeout(() => {
+        scrollCursorIntoView();
+      }, 0);
     }
 
     // Bold: Ctrl+Shift+B or Ctrl+B
@@ -282,7 +318,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       applyBulletList();
       return;
     }
-  }, [applyBold, applyItalic, applyList, applyBulletList, updateCurrentNote, scheduleAutoSave]);
+  }, [applyBold, applyItalic, applyList, applyBulletList, updateCurrentNote, scheduleAutoSave, scrollCursorIntoView]);
 
   // Word count
   const wordCount = activeNote?.body.trim()
@@ -446,6 +482,8 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
             onChange={e => {
               updateCurrentNote({ body: e.target.value });
               scheduleAutoSave();
+              // On mobile, ensure cursor stays visible above bottom nav after typing
+              scrollCursorIntoView();
             }}
             onKeyDown={handleEditorKeyDown}
           />

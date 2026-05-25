@@ -678,7 +678,7 @@ body {
     position: relative;
     /* bottom: 60px on .editor-panel ensures this doesn't go behind nav */
   }
-  .editor-textarea { font-size: 16px; padding: 1rem; padding-bottom: 5rem; } /* prevent iOS zoom + clear bottom nav */
+  .editor-textarea { font-size: 16px; padding: 1rem; padding-bottom: 6.5rem; scroll-padding-bottom: 80px; } /* prevent iOS zoom + clear bottom nav */
   .editor-preview { font-size: 16px; padding: 1rem; padding-bottom: 5rem; }
   .editor-toolbar { padding: 0.375rem 0.5rem; }
   .fmt-btn { padding: 5px 9px; font-size: 12px; }
