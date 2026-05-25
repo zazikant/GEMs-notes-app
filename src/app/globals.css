@@ -353,7 +353,7 @@ body {
   height: 100%;
   -webkit-overflow-scrolling: touch;
 }
-.editor-topbar { padding: 0.875rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.editor-topbar { padding: 0.875rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; flex-shrink: 0; flex-wrap: wrap; }
 .editor-ticker-input {
   font-family: var(--font-syne), 'Syne', sans-serif;
   font-size: 18px;
@@ -363,10 +363,12 @@ body {
   background: transparent;
   border: none;
   outline: none;
-  width: 140px;
+  min-width: 0;
+  width: 100%;
+  word-break: break-word;
 }
 .editor-ticker-input::placeholder { color: var(--border); }
-.editor-date { font-size: 12px; color: var(--muted); margin-left: auto; font-family: var(--font-syne), 'Syne', sans-serif; }
+.editor-date { font-size: 12px; color: var(--muted); margin-left: auto; font-family: var(--font-syne), 'Syne', sans-serif; flex-shrink: 0; }
 
 .editor-tags-bar {
   padding: 0.625rem 1.5rem;
