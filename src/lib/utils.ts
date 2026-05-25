@@ -127,7 +127,7 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[], existingNote
   return { notes, newTags, skipped: lines.length - 1 - notes.length };
 }
 
-function parseCSVLine(line: string): string[] {
+export function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;

@@ -3,7 +3,7 @@
 import { useCallback, useRef } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Note, Tag, AppState } from '@/types';
-import { uid, fullDate, exportNotesToCSV, parseNotesFromCSV } from '@/lib/utils';
+import { uid, fullDate, exportNotesToCSV, parseNotesFromCSV, parseCSVLine } from '@/lib/utils';
 import { addNote as convexAddNote, updateNote as convexUpdateNote, deleteNote as convexDeleteNote, addTag as convexAddTag, updateTag as convexUpdateTag, deleteTag as convexDeleteTag } from '@/lib/convex';
 
 export function useNotes() {
