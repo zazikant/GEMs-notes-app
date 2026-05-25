@@ -484,7 +484,7 @@ body {
   .layout {
     position: relative;
     overflow: hidden;
-    height: calc(100vh - var(--topbar));
+    height: calc(100dvh - var(--topbar));
     flex: 1;
   }
 
@@ -494,16 +494,15 @@ body {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     width: 100%;
-    height: 100%;
+    height: calc(100dvh - var(--topbar));
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: none;
   }
   .editor-panel {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
     height: 100%;
     display: flex;
     flex-direction: column;
+    -webkit-overflow-scrolling: touch;
   }
 
 
@@ -597,7 +596,13 @@ body {
   .editor-topbar { padding: 0.75rem 1rem; }
   .editor-ticker-input { font-size: 20px; }
   .editor-tags-bar { padding: 0.5rem 1rem; }
-  .editor-body { padding: 1rem; }
+  .editor-body {
+    flex: 1;
+    min-height: 0;
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
   .editor-textarea { font-size: 16px; } /* prevent iOS zoom */
 
   .word-count {
