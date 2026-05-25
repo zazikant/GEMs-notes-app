@@ -73,11 +73,15 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[]): { notes: No
   const notes: Note[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const parts = parseCSVLine(lines[i]);
+    const line = lines[i];
+    if (!line.trim()) continue;
+
+    const parts = parseCSVLine(line);
     if (parts.length < 4) continue;
 
-    const [ticker, , tagStr, body] = parts;
-    const bodyClean = body.replace(/""/g, '"');
+    const ticker = parts[0].trim().toUpperCase();
+    const tagStr = parts[2].trim();
+    const body = parts[3].replace(/""/g, '"').trim();
     const noteTags: string[] = [];
 
     tagStr.split(';').map(t => t.trim()).filter(Boolean).forEach(name => {
@@ -91,8 +95,8 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[]): { notes: No
 
     notes.push({
       id: uid(),
-      ticker: ticker.trim().toUpperCase(),
-      body: bodyClean,
+      ticker,
+      body,
       tags: noteTags,
       created: Date.now(),
     });
@@ -144,7 +148,7 @@ export function exportNotesToCSV(notes: Note[], tags: Tag[]): void {
     const tagNames = note.tags.map(id => tagMap.get(id) || id).join('; ');
     const date = fullDate(note.created);
     const body = note.body.replace(/"/g, '""');
-    return [note.ticker, date, tagNames, `"${body}"`].join(',');
+    return [note.ticker, `"${date}"`, tagNames, `"${body}"`].join(',');
   });
   const csv = [headers.join(','), ...rows].join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
