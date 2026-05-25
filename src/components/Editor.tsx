@@ -19,6 +19,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     toggleEditorTag,
   } = useNotes();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const tickerRef = useRef<HTMLTextAreaElement>(null);
 
   const applyBold = useCallback(() => {
     const ta = textareaRef.current;
@@ -77,17 +78,33 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
   return (
     <div className="editor-panel">
       <div className="editor-topbar">
-        <input
+        <textarea
+          ref={tickerRef}
           className="editor-ticker-input"
-          placeholder="TICKER"
+          placeholder="TICKER / TITLE"
           value={activeNote.ticker}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          onKeyDown={e => e.stopPropagation()}
+          rows={1}
+          onKeyDown={e => {
+            // Allow all normal typing (space, enter for newline, etc.)
+            // Only stop propagation to prevent global shortcuts from firing
+            if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'n' || e.key === 'b' || e.key === 'l')) {
+              e.stopPropagation();
+            }
+          }}
           onChange={e => {
-            updateCurrentNote({ ticker: e.target.value.toUpperCase() });
+            updateCurrentNote({ ticker: e.target.value });
             scheduleAutoSave();
+            // Auto-grow: reset height then set to scrollHeight
+            requestAnimationFrame(() => {
+              const el = tickerRef.current;
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+              }
+            });
           }}
         />
         <div className="editor-date">

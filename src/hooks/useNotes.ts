@@ -47,7 +47,7 @@ export function useNotes() {
       const updated: Note = {
         ...note,
         ...updates,
-        ticker: updates.ticker !== undefined ? updates.ticker.toUpperCase().trim() : note.ticker,
+        ticker: updates.ticker !== undefined ? updates.ticker : note.ticker,
       };
       dispatch({ type: 'UPDATE_NOTE', payload: updated });
       await sbUpdateNote(updated);
@@ -143,10 +143,10 @@ export function useNotes() {
       let ticker: string;
       let body: string;
       if (parts.length >= 5) {
-        ticker = parts[0].trim().toUpperCase();
+        ticker = parts[0].replace(/""/g, '"').trim();
         body = parts[4].replace(/""/g, '"').trim();
       } else {
-        ticker = parts[0].trim().toUpperCase();
+        ticker = parts[0].replace(/""/g, '"').trim();
         body = parts[3].replace(/""/g, '"').trim();
       }
       keysToDelete.add(`${ticker}:${body}`);

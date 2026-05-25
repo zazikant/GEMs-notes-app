@@ -80,7 +80,7 @@ export function parseNotesFromCSV(csv: string, existingTags: Tag[], existingNote
     const parts = parseCSVLine(line);
     if (parts.length < 4) continue;
 
-    const ticker = parts[0].trim().toUpperCase();
+    const ticker = parts[0].replace(/""/g, '"').trim();
     const tagStr = parts[parts.length >= 5 ? 3 : 2].trim();
     const body = parts[parts.length >= 5 ? 4 : 3].replace(/""/g, '"').trim();
 
@@ -160,8 +160,9 @@ export function exportNotesToCSV(notes: Note[], tags: Tag[]): void {
   const rows = notes.map(note => {
     const tagNames = note.tags.map(id => tagMap.get(id) || id).join('; ');
     const date = fullDate(note.created);
+    const ticker = note.ticker.replace(/"/g, '""');
     const body = note.body.replace(/"/g, '""');
-    return [note.ticker, `"${date}"`, tagNames, `"${body}"`].join(',');
+    return [`"${ticker}"`, `"${date}"`, tagNames, `"${body}"`].join(',');
   });
   const csv = [headers.join(','), ...rows].join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

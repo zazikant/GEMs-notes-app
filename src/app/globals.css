@@ -366,6 +366,10 @@ body {
   min-width: 0;
   width: 100%;
   word-break: break-word;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  padding: 0;
 }
 .editor-ticker-input::placeholder { color: var(--border); }
 .editor-date { font-size: 12px; color: var(--muted); margin-left: auto; font-family: var(--font-syne), 'Syne', sans-serif; flex-shrink: 0; }
@@ -590,7 +594,7 @@ body {
 
   /* Editor */
   .editor-topbar { padding: 0.75rem 1rem; }
-  .editor-ticker-input { font-size: 20px; }
+  .editor-ticker-input { font-size: 20px; min-height: 28px; }
   .editor-tags-bar { padding: 0.5rem 1rem; }
   .editor-body {
     flex: 1;

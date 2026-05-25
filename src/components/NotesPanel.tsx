@@ -102,7 +102,7 @@ function NoteCard({ note, isActive, onClick }: NoteCardProps) {
   return (
     <div className={`note-card ${isActive ? 'active' : ''}`} onClick={onClick}>
       <div className="note-card-top">
-        <span className="note-ticker">{note.ticker || '—'}</span>
+        <span className="note-ticker" style={{ whiteSpace: 'pre-wrap' }}>{note.ticker || '—'}</span>
         <span className="note-date-small">{relDate(note.created)}</span>
       </div>
       <div className="note-preview">
