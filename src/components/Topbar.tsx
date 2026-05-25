@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 
 interface TopbarProps {
@@ -8,7 +9,24 @@ interface TopbarProps {
 }
 
 export function Topbar({ onDelete, onNew }: TopbarProps) {
-  const { searchQuery, setSearchQuery, mobilePanel, setMobilePanel, exportAllNotes } = useNotes();
+  const { searchQuery, setSearchQuery, mobilePanel, setMobilePanel, exportAllNotes, importNotesFromCSV } = useNotes();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const csv = event.target?.result as string;
+      importNotesFromCSV(csv);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const handleMobileBack = () => {
     if (mobilePanel === 'editor') {
@@ -20,6 +38,13 @@ export function Topbar({ onDelete, onNew }: TopbarProps) {
 
   return (
     <header className="topbar">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
       <button className="mobile-back-btn" onClick={handleMobileBack}>
         ‹ <span>Notes</span>
       </button>
@@ -39,6 +64,9 @@ export function Topbar({ onDelete, onNew }: TopbarProps) {
       <div className="topbar-actions">
         <button className="btn btn-ghost" onClick={onDelete}>
           Delete
+        </button>
+        <button className="btn btn-ghost" onClick={handleImportClick} title="Import notes from CSV">
+          Import CSV
         </button>
         <button className="btn btn-ghost" onClick={exportAllNotes} title="Export all notes as CSV">
           Export CSV
