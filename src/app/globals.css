@@ -373,6 +373,7 @@ body {
   padding: 0;
 }
 .editor-ticker-input::placeholder { color: var(--border); }
+.editor-ticker-readonly { cursor: default; -webkit-user-select: text; user-select: text; }
 .editor-date { font-size: 12px; color: var(--muted); margin-left: auto; font-family: var(--font-syne), 'Syne', sans-serif; flex-shrink: 0; }
 
 .editor-tags-bar {
@@ -406,6 +407,7 @@ body {
 .editor-tag-btn:hover { border-color: var(--muted); color: var(--text); }
 .editor-tag-btn.on { border-color: transparent; }
 .editor-tag-btn .etag-dot { width: 6px; height: 6px; border-radius: 50%; }
+.editor-tag-readonly { cursor: default; opacity: 0.7; pointer-events: none; }
 
 .editor-body { flex: 1; min-height: 0; overflow: hidden; padding: 0; position: relative; }
 .editor-textarea { width: 100%; height: 100%; position: absolute; top: 0; left: 0; right: 0; bottom: 0; padding: 1.5rem; background: transparent; border: none; outline: none; font-family: var(--font-epilogue), 'Epilogue', sans-serif; font-size: 15px; line-height: 1.8; color: var(--text); resize: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -417,6 +419,8 @@ body {
 .fmt-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: 12px; cursor: pointer; color: var(--text); transition: all 0.15s; font-family: var(--font-epilogue), 'Epilogue', sans-serif; white-space: nowrap; }
 .fmt-btn:hover { background: var(--border); }
 .fmt-btn-active { background: var(--accent-light); border-color: var(--accent); color: var(--accent-text); }
+.fmt-btn-edit-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+.fmt-btn-edit-primary:hover { background: #244f26; }
 .fmt-btn-action { color: var(--muted); }
 .fmt-btn-action:hover { color: var(--text); }
 .fmt-btn-danger { color: #c0392b; }
@@ -462,6 +466,23 @@ body {
 .editor-preview ul { margin: 0.5em 0 0.75em 1.5em; list-style-type: disc; }
 .editor-preview li { margin-bottom: 0.3em; line-height: 1.7; }
 .editor-preview ol li { list-style-type: decimal; }
+
+/* ── Read-only preview mode ── */
+.editor-preview-readonly { cursor: default; }
+.editor-preview-readonly::after {
+  content: 'Tap ✎ Edit to make changes';
+  display: block;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+  font-family: var(--font-syne), 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
 
 .mobile-delete-btn { display: none; }
 

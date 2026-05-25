@@ -85,7 +85,8 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const tickerRef = useRef<HTMLTextAreaElement>(null);
   const editorBodyRef = useRef<HTMLDivElement>(null);
-  const [previewMode, setPreviewMode] = useState(false);
+  // Default: view/read mode. Must explicitly click Edit to enable editing.
+  const [isEditing, setIsEditing] = useState(false);
 
   // Pull-to-refresh support on the editor body
   const { containerRef: pullRef, pullState } = usePullToRefresh(70, () => {
@@ -304,13 +305,14 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       <div className="editor-topbar">
         <textarea
           ref={tickerRef}
-          className="editor-ticker-input"
+          className={`editor-ticker-input ${!isEditing ? 'editor-ticker-readonly' : ''}`}
           placeholder="TICKER / TITLE"
           value={activeNote.ticker}
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
           rows={1}
+          readOnly={!isEditing}
           onKeyDown={e => {
             // Only stop propagation for Ctrl/Cmd shortcuts
             if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'n' || e.key === 'b' || e.key === 'i' || (e.shiftKey && (e.key === 'L' || e.key === 'U')))) {
@@ -347,8 +349,8 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           return (
             <button
               key={tag.id}
-              className={`editor-tag-btn ${isOn ? 'on' : ''}`}
-              onClick={() => toggleEditorTag(tag.id)}
+              className={`editor-tag-btn ${isOn ? 'on' : ''} ${!isEditing ? 'editor-tag-readonly' : ''}`}
+              onClick={() => { if (isEditing) toggleEditorTag(tag.id); }}
               style={
                 isOn
                   ? { background: c.bg, color: c.text, borderColor: c.border }
@@ -364,46 +366,56 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       {/* Toolbar: format buttons + action buttons all in one bar */}
       <div className="editor-toolbar">
         <div className="editor-toolbar-left">
+          {isEditing && (<>
+            <button
+              className="fmt-btn"
+              title="Bold (Ctrl+B)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyBold()}
+            >
+              <strong>B</strong>
+            </button>
+            <button
+              className="fmt-btn"
+              title="Italic (Ctrl+I)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyItalic()}
+            >
+              <em>I</em>
+            </button>
+            <button
+              className="fmt-btn"
+              title="Numbered list (Ctrl+Shift+L)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyList()}
+            >
+              <span style={{ fontFamily: 'monospace' }}>1.</span>
+            </button>
+            <button
+              className="fmt-btn"
+              title="Bullet list (Ctrl+Shift+U)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyBulletList()}
+            >
+              <span style={{ fontFamily: 'monospace' }}>&#8226;</span>
+            </button>
+            <div className="fmt-separator" />
+          </>)}
+          {/* Edit / Done toggle button — always visible */}
           <button
-            className="fmt-btn"
-            title="Bold (Ctrl+B)"
-            onMouseDown={e => e.preventDefault()} // prevent stealing textarea focus
-            onClick={() => { if (previewMode) setPreviewMode(false); applyBold(); }}
-          >
-            <strong>B</strong>
-          </button>
-          <button
-            className="fmt-btn"
-            title="Italic (Ctrl+I)"
+            className={`fmt-btn ${isEditing ? 'fmt-btn-active' : 'fmt-btn-edit-primary'}`}
+            title={isEditing ? 'Done editing' : 'Edit this note'}
             onMouseDown={e => e.preventDefault()}
-            onClick={() => { if (previewMode) setPreviewMode(false); applyItalic(); }}
+            onClick={() => {
+              if (isEditing) {
+                // Exiting edit mode — save and switch to view
+                saveCurrentNote();
+                onSave();
+              }
+              setIsEditing(!isEditing);
+            }}
           >
-            <em>I</em>
-          </button>
-          <button
-            className="fmt-btn"
-            title="Numbered list (Ctrl+Shift+L)"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => { if (previewMode) setPreviewMode(false); applyList(); }}
-          >
-            <span style={{ fontFamily: 'monospace' }}>1.</span>
-          </button>
-          <button
-            className="fmt-btn"
-            title="Bullet list (Ctrl+Shift+U)"
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => { if (previewMode) setPreviewMode(false); applyBulletList(); }}
-          >
-            <span style={{ fontFamily: 'monospace' }}>&#8226;</span>
-          </button>
-          <div className="fmt-separator" />
-          <button
-            className={`fmt-btn ${previewMode ? 'fmt-btn-active' : ''}`}
-            title={previewMode ? 'Edit mode' : 'Preview mode'}
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => setPreviewMode(!previewMode)}
-          >
-            {previewMode ? '✎ Edit' : '👁 Preview'}
+            {isEditing ? '✓ Done' : '✎ Edit'}
           </button>
         </div>
         <div className="editor-toolbar-right">
@@ -425,14 +437,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
             'Pull to refresh'
           )}
         </div>
-        {previewMode ? (
-          <div
-            className="editor-preview"
-            onClick={() => setPreviewMode(false)}
-            title="Click to switch back to edit mode"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(activeNote.body) }}
-          />
-        ) : (
+        {isEditing ? (
           <textarea
             ref={textareaRef}
             className="editor-textarea"
@@ -443,6 +448,13 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
               scheduleAutoSave();
             }}
             onKeyDown={handleEditorKeyDown}
+          />
+        ) : (
+          <div
+            className="editor-preview editor-preview-readonly"
+            onClick={() => setIsEditing(true)}
+            title="Tap Edit to start editing"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(activeNote.body) }}
           />
         )}
       </div>
