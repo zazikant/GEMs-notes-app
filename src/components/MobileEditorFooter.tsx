@@ -14,6 +14,10 @@ export function MobileEditorFooter({ onCopy, onDelete, onSave }: MobileEditorFoo
     ? activeNote.body.trim().split(/\s+/).length
     : 0;
 
+  if (!activeNote) {
+    return null;
+  }
+
   return (
     <div className="mobile-editor-footer">
       <span className="word-count">
