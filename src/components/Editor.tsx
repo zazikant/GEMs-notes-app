@@ -43,6 +43,8 @@ function renderMarkdown(text: string): string {
     line = line.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
     // Strikethrough: ~~text~~
     line = line.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    // Highlight: ==text==
+    line = line.replace(/==(.+?)==/g, '<mark>$1</mark>');
 
     output.push(line);
   }
@@ -168,6 +170,70 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
     scheduleAutoSave();
     setTimeout(() => {
       ta.setSelectionRange(start + 1, end + 1);
+      ta.focus();
+    }, 0);
+  }, [updateCurrentNote, scheduleAutoSave]);
+
+  const applyStrikethrough = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    const newText = ta.value.substring(0, start) + '~~' + selected + '~~' + ta.value.substring(end);
+    updateCurrentNote({ body: newText });
+    scheduleAutoSave();
+    setTimeout(() => {
+      ta.setSelectionRange(start + 2, end + 2);
+      ta.focus();
+    }, 0);
+  }, [updateCurrentNote, scheduleAutoSave]);
+
+  const applyHeading = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const value = ta.value;
+    // Find the start of the current line
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const lineEnd = value.indexOf('\n', end);
+    const fullLineEnd = lineEnd === -1 ? value.length : lineEnd;
+    const currentLine = value.substring(lineStart, fullLineEnd);
+    // Toggle heading levels: no # → ## → ### → # (cycle)
+    const h3Match = currentLine.match(/^###\s+/);
+    const h2Match = currentLine.match(/^##\s+(?!#)/);
+    const h1Match = currentLine.match(/^#\s+(?!#)/);
+    let newLine: string;
+    if (h3Match) {
+      newLine = currentLine.replace(/^###\s+/, '');
+    } else if (h2Match) {
+      newLine = currentLine.replace(/^##\s+/, '### ');
+    } else if (h1Match) {
+      newLine = currentLine.replace(/^#\s+/, '## ');
+    } else {
+      newLine = '# ' + currentLine;
+    }
+    const newText = value.substring(0, lineStart) + newLine + value.substring(fullLineEnd);
+    updateCurrentNote({ body: newText });
+    scheduleAutoSave();
+    setTimeout(() => {
+      ta.setSelectionRange(lineStart, lineStart + newLine.length);
+      ta.focus();
+    }, 0);
+  }, [updateCurrentNote, scheduleAutoSave]);
+
+  const applyHighlight = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    const newText = ta.value.substring(0, start) + '==' + selected + '==' + ta.value.substring(end);
+    updateCurrentNote({ body: newText });
+    scheduleAutoSave();
+    setTimeout(() => {
+      ta.setSelectionRange(start + 2, end + 2);
       ta.focus();
     }, 0);
   }, [updateCurrentNote, scheduleAutoSave]);
@@ -369,6 +435,27 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       applyItalic();
       return;
     }
+    // Strikethrough: Ctrl+Shift+X
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'X') {
+      e.preventDefault();
+      e.stopPropagation();
+      applyStrikethrough();
+      return;
+    }
+    // Highlight: Ctrl+Shift+H
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'H') {
+      e.preventDefault();
+      e.stopPropagation();
+      applyHighlight();
+      return;
+    }
+    // Heading: Ctrl+H
+    if ((e.metaKey || e.ctrlKey) && e.key === 'h') {
+      e.preventDefault();
+      e.stopPropagation();
+      applyHeading();
+      return;
+    }
     // Numbered list: Ctrl+Shift+L (Ctrl+L is reserved by browser for address bar)
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'L') {
       e.preventDefault();
@@ -383,7 +470,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       applyBulletList();
       return;
     }
-  }, [applyBold, applyItalic, applyList, applyBulletList, updateCurrentNote, scheduleAutoSave, scrollCursorIntoView]);
+  }, [applyBold, applyItalic, applyStrikethrough, applyHeading, applyHighlight, applyList, applyBulletList, updateCurrentNote, scheduleAutoSave, scrollCursorIntoView]);
 
   // Word count
   const wordCount = activeNote?.body.trim()
@@ -416,7 +503,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           readOnly={!isEditing}
           onKeyDown={e => {
             // Only stop propagation for Ctrl/Cmd shortcuts
-            if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'n' || e.key === 'b' || e.key === 'i' || (e.shiftKey && (e.key === 'L' || e.key === 'U')))) {
+            if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'n' || e.key === 'b' || e.key === 'i' || e.key === 'h' || (e.shiftKey && (e.key === 'L' || e.key === 'U' || e.key === 'X' || e.key === 'H')))) {
               e.stopPropagation();
             }
           }}
@@ -483,6 +570,30 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
               onClick={() => applyItalic()}
             >
               <em>I</em>
+            </button>
+            <button
+              className="fmt-btn"
+              title="Strikethrough (Ctrl+Shift+X)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyStrikethrough()}
+            >
+              <span style={{ fontFamily: 'monospace', textDecoration: 'line-through' }}>S</span>
+            </button>
+            <button
+              className="fmt-btn"
+              title="Highlight (Ctrl+Shift+H)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyHighlight()}
+            >
+              <span className="fmt-highlight-icon">H</span>
+            </button>
+            <button
+              className="fmt-btn"
+              title="Heading (Ctrl+H)"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => applyHeading()}
+            >
+              <span style={{ fontFamily: 'monospace', fontWeight: 900 }}>H#</span>
             </button>
             <button
               className="fmt-btn"
@@ -557,7 +668,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           <textarea
             ref={textareaRef}
             className="editor-textarea"
-            placeholder="Write your analysis, observations, trade rationale…&#10;&#10;Formatting: **bold**, _italic_, ~~strikethrough~~&#10;1. or - then Enter = auto-continue list&#10;Ctrl+B = Bold | Ctrl+I = Italic | Ctrl+Shift+L = Numbered list"
+            placeholder="Write your analysis, observations, trade rationale…&#10;&#10;Formatting: **bold**, _italic_, ~~strikethrough~~, ==highlight==&#10;1. or - then Enter = auto-continue list&#10;Ctrl+B Bold | Ctrl+I Italic | Ctrl+H Heading | Ctrl+Shift+H Highlight"
             value={activeNote.body}
             onChange={e => {
               updateCurrentNote({ body: e.target.value });
