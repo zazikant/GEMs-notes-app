@@ -466,6 +466,8 @@ body {
 .editor-preview ul { margin: 0.5em 0 0.75em 1.5em; list-style-type: disc; }
 .editor-preview li { margin-bottom: 0.3em; line-height: 1.7; }
 .editor-preview ol li { list-style-type: decimal; }
+.editor-preview ol ul { margin: 0.3em 0 0.5em 1.2em; list-style-type: circle; }
+.editor-preview li > ul { margin-top: 0.2em; }
 
 /* ── Read-only preview mode ── */
 .editor-preview-readonly { cursor: default; }

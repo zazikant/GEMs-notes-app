@@ -34,14 +34,41 @@ function renderMarkdown(text: string): string {
   html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
   html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
-  // Numbered lists: 1. item (consecutive lines grouped into <ol>)
+  // Numbered lists with optional sub-bullets (nested lists)
+  // Pattern: consecutive lines where each starts with either "N. " (top-level) or " - " / " * " (sub-item)
   html = html.replace(
-    /((?:^\d+\.\s+.+(?:\n|$))+)/gm,
+    /((?:^\d+\.\s+.+(?:\n\s+[-*]\s+.+)*(?:\n|$))+)/gm,
     (match) => {
-      const items = match.trim().split('\n').map(line =>
-        line.replace(/^\d+\.\s+/, '')
-      );
-      return '<ol>' + items.map(item => `<li>${item}</li>`).join('') + '</ol>';
+      const lines = match.trim().split('\n');
+      let result = '<ol>';
+      let inSubList = false;
+      for (const line of lines) {
+        const subMatch = line.match(/^\s+([-*])\s+(.+)$/);
+        if (subMatch) {
+          if (!inSubList) {
+            result += '<ul>';
+            inSubList = true;
+          }
+          result += `<li>${subMatch[2]}</li>`;
+        } else {
+          if (inSubList) {
+            result += '</ul>';
+            inSubList = false;
+          }
+          const itemText = line.replace(/^\d+\.\s+/, '');
+          result += `<li>${itemText}`;
+          // Check if next line is a sub-item — if so, the </li> will close after </ul>
+          const nextIdx = lines.indexOf(line) + 1;
+          if (nextIdx < lines.length && /^\s+[-*]\s+/.test(lines[nextIdx])) {
+            // Don't close <li> yet — sub-list will be inside it
+          } else {
+            result += '</li>';
+          }
+        }
+      }
+      if (inSubList) result += '</ul>';
+      result += '</ol>';
+      return result;
     }
   );
 
@@ -69,6 +96,22 @@ function renderMarkdown(text: string): string {
   html = html.replace(/(<\/(?:ol|ul|h[1-3])>)\s*<\/p>/g, '$1');
 
   return html;
+}
+
+/** Renumber all top-level numbered items in text sequentially (1, 2, 3, …)
+ *  Sub-bullet lines (indented `- ` or `* `) are left unchanged. */
+function renumberLists(text: string): string {
+  const lines = text.split('\n');
+  let counter = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^(\d+)\.\s+/);
+    if (m) {
+      counter++;
+      lines[i] = lines[i].replace(/^\d+\.\s+/, `${counter}. `);
+    }
+    // Lines that are sub-bullets (indented - or *) or non-numbered are skipped
+  }
+  return lines.join('\n');
 }
 
 export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
@@ -244,7 +287,65 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
         return;
       }
 
-      // Match bullet list: "- " or "* "
+      // Match indented sub-bullet list: " - " or "  * " (under a numbered item)
+      const subBulletMatch = currentLine.match(/^(\s+)([-*])\s+/);
+      if (subBulletMatch) {
+        const indent = subBulletMatch[1];
+        const bulletChar = subBulletMatch[2];
+        const prefix = subBulletMatch[0];
+        // If the line is ONLY the prefix (no content), transition to next numbered item or exit
+        if (currentLine.trim() === `${bulletChar} ` || currentLine.trim() === `${bulletChar}`) {
+          e.preventDefault();
+          // Find the most recent numbered item above this line
+          const textBeforeLine = value.substring(0, lineStart);
+          const prevLines = textBeforeLine.split('\n');
+          let lastNumber = 0;
+          for (let i = prevLines.length - 1; i >= 0; i--) {
+            const nm = prevLines[i].match(/^(\d+)\.\s+/);
+            if (nm) {
+              lastNumber = parseInt(nm[1], 10);
+              break;
+            }
+          }
+          const nextNum = lastNumber + 1;
+          const nextPrefix = `${nextNum}. `;
+          const before = value.substring(0, lineStart);
+          const after = value.substring(cursorPos);
+          const newText = before + '\n' + nextPrefix + after;
+          updateCurrentNote({ body: renumberLists(newText) });
+          scheduleAutoSave();
+          setTimeout(() => {
+            const newPos = before.length + 1 + `${lastNumber + 1}. `.length;
+            // After renumber, the actual prefix may have shifted — recalculate
+            const updatedText = ta.value;
+            const updatedLineStart = updatedText.lastIndexOf('\n', newPos - 1) + 1;
+            const updatedLine = updatedText.substring(updatedLineStart, updatedLineStart + 20);
+            const updatedNumMatch = updatedLine.match(/^(\d+)\.\s+/);
+            if (updatedNumMatch) {
+              ta.selectionStart = ta.selectionEnd = updatedLineStart + updatedNumMatch[0].length;
+            } else {
+              ta.selectionStart = ta.selectionEnd = newPos;
+            }
+            scrollCursorIntoView();
+          }, 0);
+          return;
+        }
+        // Continue with same indented bullet prefix
+        e.preventDefault();
+        const before = value.substring(0, cursorPos);
+        const after = value.substring(cursorPos);
+        const newText = before + '\n' + indent + bulletChar + ' ' + after;
+        updateCurrentNote({ body: newText });
+        scheduleAutoSave();
+        setTimeout(() => {
+          const newPos = before.length + 1 + indent.length + bulletChar.length + 1;
+          ta.selectionStart = ta.selectionEnd = newPos;
+          scrollCursorIntoView();
+        }, 0);
+        return;
+      }
+
+      // Match top-level bullet list: "- " or "* " (not indented)
       const bulletMatch = currentLine.match(/^[-*]\s+/);
       if (bulletMatch) {
         const prefix = bulletMatch[0];
@@ -444,7 +545,9 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
             onMouseDown={e => e.preventDefault()}
             onClick={() => {
               if (isEditing) {
-                // Exiting edit mode — save and switch to view
+                // Exiting edit mode — renumber lists, save and switch to view
+                const renumbered = renumberLists(activeNote.body);
+                updateCurrentNote({ body: renumbered });
                 saveCurrentNote();
                 onSave();
               }
@@ -472,7 +575,7 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           }}>Download</button>
           <button className="fmt-btn fmt-btn-action" title="Copy note" onClick={onCopy}>Copy</button>
           <button className="fmt-btn fmt-btn-danger" title="Delete note" onClick={onDelete}>Delete</button>
-          <button className={`fmt-btn fmt-btn-save ${isDirty() ? 'fmt-btn-dirty' : ''}`} title="Save note (Ctrl+S)" onClick={async () => { await saveCurrentNote(); onSave(); }}>{isDirty() ? 'Save •' : 'Saved'}</button>
+          <button className={`fmt-btn fmt-btn-save ${isDirty() ? 'fmt-btn-dirty' : ''}`} title="Save note (Ctrl+S)" onClick={async () => { const renumbered = renumberLists(activeNote.body); updateCurrentNote({ body: renumbered }); await saveCurrentNote(); onSave(); }}>{isDirty() ? 'Save •' : 'Saved'}</button>
         </div>
       </div>
       <div className="editor-body" ref={setBodyRef}>
