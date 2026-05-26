@@ -773,3 +773,200 @@ body {
 
 .modal-color-row { margin-bottom: 1rem; }
 .modal-color-label { font-family: var(--font-syne), 'Syne', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+
+/* ── PIN Lock Screen ── */
+.pin-lock-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+.pin-lock-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2.5rem 2rem 2rem;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+.pin-lock-brand {
+  margin-bottom: 1.5rem;
+}
+.pin-lock-logo {
+  font-family: var(--font-syne), 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pin-lock-logo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.pin-lock-icon {
+  color: var(--accent);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+.pin-lock-title {
+  font-family: var(--font-syne), 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.375rem;
+}
+.pin-lock-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+/* PIN dots */
+.pin-dots {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.pin-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-syne), 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.pin-dot.filled {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+.pin-dot.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(44, 95, 46, 0.15);
+}
+
+/* Hidden input (covers the whole card area for keyboard capture) */
+.pin-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+.pin-hidden-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  top: -200px;
+  left: 0;
+  cursor: default;
+  /* Make it large enough to capture taps on mobile */
+  font-size: 16px;
+}
+
+/* Unlock button */
+.pin-submit-btn {
+  font-family: var(--font-syne), 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+.pin-submit-btn:hover:not(:disabled) {
+  background: #244f26;
+  transform: translateY(-1px);
+}
+.pin-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Show/hide toggle */
+.pin-toggle-visibility {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-bottom: 0.75rem;
+  transition: color 0.15s;
+}
+.pin-toggle-visibility:hover { color: var(--text); }
+
+/* Error */
+.pin-error {
+  font-family: var(--font-syne), 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c0392b;
+  margin-bottom: 0.75rem;
+}
+
+/* Admin info */
+.pin-admin-info {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  font-family: var(--font-epilogue), 'Epilogue', sans-serif;
+  opacity: 0.6;
+}
+
+/* Shake animation for wrong PIN */
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+  20%, 40%, 60%, 80% { transform: translateX(6px); }
+}
+.pin-shake {
+  animation: pin-shake 0.6s ease-in-out;
+}
+
+/* Mobile adjustments for PIN lock */
+@media (max-width: 768px) {
+  .pin-lock-overlay { padding: 0; }
+  .pin-lock-card {
+    border-radius: 0;
+    max-width: 100%;
+    min-height: 100vh;
+    padding: 3rem 1.5rem 2rem;
+    justify-content: center;
+  }
+  .pin-dot {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .pin-dots { gap: 8px; }
+  .pin-lock-title { font-size: 18px; }
+}

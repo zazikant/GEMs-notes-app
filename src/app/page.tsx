@@ -6,11 +6,15 @@ import { Sidebar } from '@/components/Sidebar';
 import { NotesPanel } from '@/components/NotesPanel';
 import { Editor } from '@/components/Editor';
 import { ToastManager, showToast } from '@/components/Toast';
+import { PinLock } from '@/components/PinLock';
 import { useNotes } from '@/hooks/useNotes';
 import { uid, fullDate } from '@/lib/utils';
 import { PALETTE } from '@/types';
 
 export default function Home() {
+  // PIN lock state — app is hidden until unlocked
+  const [isUnlocked, setIsUnlocked] = useState(false);
+
   const {
     activeId,
     activeNote,
@@ -194,6 +198,21 @@ export default function Home() {
       setMobilePanel(panel);
     }
   }, [mobilePanel, setMobilePanel]);
+
+  // PIN lock handler
+  const handleUnlock = useCallback(() => {
+    setIsUnlocked(true);
+  }, []);
+
+  // Show PIN lock screen if not yet unlocked
+  if (!isUnlocked) {
+    return (
+      <>
+        <PinLock onUnlock={handleUnlock} />
+        <ToastManager />
+      </>
+    );
+  }
 
   return (
     <>
