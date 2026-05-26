@@ -361,53 +361,52 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
         const indent = subBulletMatch[1];
         const bulletChar = subBulletMatch[2];
         const prefix = subBulletMatch[0];
-        // If the line is ONLY the prefix (no content), transition to next numbered item or exit
+        // If the line is ONLY the prefix (no content), remove it and exit to plain line
         if (currentLine.trim() === `${bulletChar} ` || currentLine.trim() === `${bulletChar}`) {
           e.preventDefault();
-          // Find the most recent numbered item above this line
-          const textBeforeLine = value.substring(0, lineStart);
-          const prevLines = textBeforeLine.split('\n');
-          let lastNumber = 0;
-          for (let i = prevLines.length - 1; i >= 0; i--) {
-            const nm = prevLines[i].match(/^(\d+)\.\s+/);
-            if (nm) {
-              lastNumber = parseInt(nm[1], 10);
-              break;
-            }
-          }
-          const nextNum = lastNumber + 1;
-          const nextPrefix = `${nextNum}. `;
           const before = value.substring(0, lineStart);
           const after = value.substring(cursorPos);
-          const newText = before + '\n' + nextPrefix + after;
-          updateCurrentNote({ body: renumberLists(newText) });
+          const newText = before + '\n' + after;
+          updateCurrentNote({ body: newText });
           scheduleAutoSave();
           setTimeout(() => {
-            const newPos = before.length + 1 + `${lastNumber + 1}. `.length;
-            // After renumber, the actual prefix may have shifted — recalculate
-            const updatedText = ta.value;
-            const updatedLineStart = updatedText.lastIndexOf('\n', newPos - 1) + 1;
-            const updatedLine = updatedText.substring(updatedLineStart, updatedLineStart + 20);
-            const updatedNumMatch = updatedLine.match(/^(\d+)\.\s+/);
-            if (updatedNumMatch) {
-              ta.selectionStart = ta.selectionEnd = updatedLineStart + updatedNumMatch[0].length;
-            } else {
-              ta.selectionStart = ta.selectionEnd = newPos;
-            }
+            ta.selectionStart = ta.selectionEnd = before.length + 1;
             scrollCursorIntoView();
           }, 0);
           return;
         }
-        // Continue with same indented bullet prefix
+        // Sub-bullet has content → transition to next numbered item
+        // Find the most recent numbered item above this line
         e.preventDefault();
+        const textBeforeLine = value.substring(0, lineStart);
+        const prevLines = textBeforeLine.split('\n');
+        let lastNumber = 0;
+        for (let i = prevLines.length - 1; i >= 0; i--) {
+          const nm = prevLines[i].match(/^(\d+)\.\s+/);
+          if (nm) {
+            lastNumber = parseInt(nm[1], 10);
+            break;
+          }
+        }
+        const nextNum = lastNumber + 1;
+        const nextPrefix = `${nextNum}. `;
         const before = value.substring(0, cursorPos);
         const after = value.substring(cursorPos);
-        const newText = before + '\n' + indent + bulletChar + ' ' + after;
-        updateCurrentNote({ body: newText });
+        const newText = before + '\n' + nextPrefix + after;
+        updateCurrentNote({ body: renumberLists(newText) });
         scheduleAutoSave();
         setTimeout(() => {
-          const newPos = before.length + 1 + indent.length + bulletChar.length + 1;
-          ta.selectionStart = ta.selectionEnd = newPos;
+          // After renumber, find the actual line start and prefix length
+          const updatedText = ta.value;
+          // The new line starts after 'before' + '\n'
+          const newLineStart = before.length + 1;
+          const updatedLine = updatedText.substring(newLineStart, newLineStart + 20);
+          const updatedNumMatch = updatedLine.match(/^(\d+)\.\s+/);
+          if (updatedNumMatch) {
+            ta.selectionStart = ta.selectionEnd = newLineStart + updatedNumMatch[0].length;
+          } else {
+            ta.selectionStart = ta.selectionEnd = newLineStart + nextPrefix.length;
+          }
           scrollCursorIntoView();
         }, 0);
         return;
