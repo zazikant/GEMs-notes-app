@@ -151,7 +151,13 @@ function renderMarkdown(text: string): string {
   closeAllLists();
 
   // Join lines: double blank line → paragraph break, single newline → <br>
+  // But first, collapse list internals so no extra <br> appears between list elements
   let html = output.join('\n');
+
+  // Remove newlines inside list structures (between tags) to prevent extra <br> gaps
+  html = html.replace(/(<\/(?:ol|ul|li)>)\s+(<(?:ol|ul|li)>)/g, '$1$2');
+  html = html.replace(/(<li>[^<]*)\s+(<\/(?:li|ul|ol)>)/g, '$1$2');
+
   html = html.replace(/\n{2,}/g, '</p><p>');
   html = html.replace(/\n/g, '<br>');
 
