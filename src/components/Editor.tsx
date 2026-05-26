@@ -385,8 +385,8 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           return (
             <button
               key={tag.id}
-              className={`editor-tag-btn ${isOn ? 'on' : ''} ${!isEditing ? 'editor-tag-readonly' : ''}`}
-              onClick={() => { if (isEditing) toggleEditorTag(tag.id); }}
+              className={`editor-tag-btn ${isOn ? 'on' : ''}`}
+              onClick={() => toggleEditorTag(tag.id)}
               style={
                 isOn
                   ? { background: c.bg, color: c.text, borderColor: c.border }
