@@ -11,6 +11,10 @@ interface EditorProps {
   onSave: () => void;
 }
 
+// Module-level store for raw markdown tables (avoids <br> corruption in data attributes)
+const tableMarkdownStore = new Map<string, string>();
+let tableIdCounter = 0;
+
 /** Apply inline formatting to a string (bold, italic, strikethrough, highlight, links). */
 function applyInline(text: string): string {
   let t = text;
@@ -72,15 +76,12 @@ function renderTableBlock(tableLines: string[]): string {
 
   html += '</table>';
 
-  // Store the raw markdown (with pipes) in a data attribute for the copy button
-  const rawMarkdown = tableLines.join('\n')
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  // Store the raw markdown (with pipes) in a module-level Map so newlines survive the HTML pipeline
+  const tableId = `tbl-${++tableIdCounter}`;
+  tableMarkdownStore.set(tableId, tableLines.join('\n'));
 
-  // Wrap in a container with a copy button
-  html = `<div class="table-wrapper" data-markdown="${rawMarkdown}">` +
+  // Wrap in a container with a copy button (only store the ID, not the markdown)
+  html = `<div class="table-wrapper" data-table-id="${tableId}">` +
     `<button class="table-copy-btn" title="Copy table as markdown">&#128203;</button>` +
     html +
     `</div>`;
@@ -206,15 +207,12 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
       if (!target.classList.contains('table-copy-btn')) return;
       const wrapper = target.closest('.table-wrapper') as HTMLElement | null;
       if (!wrapper) return;
-      const markdown = wrapper.getAttribute('data-markdown');
+      const tableId = wrapper.getAttribute('data-table-id');
+      if (!tableId) return;
+      // Retrieve the raw markdown from the module-level store (newlines are preserved)
+      const markdown = tableMarkdownStore.get(tableId);
       if (!markdown) return;
-      // Decode HTML entities back to plain text
-      const decoded = markdown
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"');
-      navigator.clipboard.writeText(decoded).then(() => {
+      navigator.clipboard.writeText(markdown).then(() => {
         // Visual feedback: briefly change the button text
         const btn = target as HTMLButtonElement;
         const original = btn.innerHTML;
