@@ -188,9 +188,15 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   // Pull-to-refresh support on the editor body
-  const { pullState } = usePullToRefresh(70, () => {
+  const { containerRef: pullRef, pullState, pullDistance } = usePullToRefresh(70, () => {
     window.location.reload();
   });
+
+  // Merge pullRef and editorBodyRef so the hook can attach touch listeners
+  const setEditorBodyRef = useCallback((el: HTMLDivElement | null) => {
+    (pullRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    (editorBodyRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+  }, [pullRef]);
 
   // Auto-grow ticker on mount and when activeNote changes
   useEffect(() => {
@@ -765,9 +771,12 @@ export function Editor({ onCopy, onDelete, onSave }: EditorProps) {
           <button className={`fmt-btn fmt-btn-save ${isDirty() ? 'fmt-btn-dirty' : ''}`} title="Save note (Ctrl+S)" onClick={async () => { const renumbered = renumberLists(activeNote.body); updateCurrentNote({ body: renumbered }); await saveCurrentNote(); onSave(); }}>{isDirty() ? 'Save •' : 'Saved'}</button>
         </div>
       </div>
-      <div className="editor-body" ref={editorBodyRef}>
+      <div className="editor-body" ref={setEditorBodyRef}>
         {/* Pull-to-refresh indicator (mobile only) */}
-        <div className={`pull-refresh-indicator ${pullState !== 'idle' ? 'visible' : ''}`}>
+        <div
+          className={`pull-refresh-indicator ${pullState !== 'idle' ? 'visible' : ''} ${pullState === 'ready' ? 'ready' : ''}`}
+          style={{ transform: `translateX(-50%) translateY(${Math.max(0, pullDistance.current - 44)}px)` }}
+        >
           {pullState === 'refreshing' ? (
             <><span className="spinner" /> Refreshing...</>
           ) : pullState === 'ready' ? (

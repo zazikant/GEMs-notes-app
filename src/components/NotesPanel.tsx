@@ -16,7 +16,7 @@ export function NotesPanel() {
   const notesListRef = useRef<HTMLDivElement>(null);
 
   // Pull-to-refresh support
-  const { containerRef: pullRef, pullState } = usePullToRefresh(70, () => {
+  const { containerRef: pullRef, pullState, pullDistance } = usePullToRefresh(70, () => {
     // Reload the page to refresh all data
     window.location.reload();
   });
@@ -83,7 +83,10 @@ export function NotesPanel() {
       </div>
       <div className="notes-list" id="notesList" ref={setListRef} style={{ position: 'relative' }}>
         {/* Pull-to-refresh indicator (mobile only) */}
-        <div className={`pull-refresh-indicator ${pullState !== 'idle' ? 'visible' : ''}`}>
+        <div
+          className={`pull-refresh-indicator ${pullState !== 'idle' ? 'visible' : ''} ${pullState === 'ready' ? 'ready' : ''}`}
+          style={{ transform: `translateX(-50%) translateY(${Math.max(0, pullDistance.current - 44)}px)` }}
+        >
           {pullState === 'refreshing' ? (
             <><span className="spinner" /> Refreshing...</>
           ) : pullState === 'ready' ? (
