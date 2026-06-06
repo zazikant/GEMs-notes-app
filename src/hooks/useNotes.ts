@@ -258,7 +258,12 @@ export function useNotes() {
       dispatch({ type: 'SET_MOBILE_PANEL', payload: panel }),
     addTag: async (tag: Tag) => {
       dispatch({ type: 'ADD_TAG', payload: tag });
-      await sbAddTag(tag);
+      try {
+        await sbAddTag(tag);
+      } catch {
+        // Rollback optimistic update if Supabase insert fails
+        dispatch({ type: 'DELETE_TAG', payload: tag.id });
+      }
     },
     updateTag: async (tag: Tag) => {
       dispatch({ type: 'UPDATE_TAG', payload: tag });

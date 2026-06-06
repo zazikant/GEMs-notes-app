@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppState, AppAction, Note, Tag, PALETTE } from '@/types';
-import { loadNotes, loadTags, seedIfEmpty, subscribeToNotes, subscribeToTags, updateNote as sbUpdateNote, deleteTag as sbDeleteTag } from '@/lib/supabase';
+import { loadNotes, loadTags, seedIfEmpty, subscribeToNotes, subscribeToTags, updateNote as sbUpdateNote } from '@/lib/supabase';
 
 const initialState: AppState = {
   notes: [],
@@ -137,27 +137,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 2. Remove stale tags (tags with zero notes referencing them)
-      const usedTagIds = new Set(cleanedNotes.flatMap(n => n.tags));
-      let tagsNeedCleanup = false;
-      const cleanedTags = tags.filter(t => {
-        if (!usedTagIds.has(t.id)) {
-          tagsNeedCleanup = true;
-          return false;
-        }
-        return true;
-      });
-
-      // Persist: delete stale tags from Supabase
-      if (tagsNeedCleanup) {
-        const staleTagIds = tags.filter(t => !usedTagIds.has(t.id)).map(t => t.id);
-        for (const id of staleTagIds) {
-          await sbDeleteTag(id);
-        }
-      }
+      // NOTE: We intentionally do NOT delete tags that have zero notes referencing them.
+      // Previously, the "stale tag cleanup" would permanently delete unused tags from
+      // Supabase on every page load, causing newly created tags to vanish if they
+      // weren't immediately assigned to a note. Tags should persist until the user
+      // explicitly deletes them.
 
       notes = cleanedNotes;
-      tags = cleanedTags;
       // ── End cleanup ──
 
       dispatch({ type: 'SET_NOTES', payload: notes });

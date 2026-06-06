@@ -83,7 +83,10 @@ export async function addTag(tag: Tag): Promise<void> {
     color: tag.color,
   });
 
-  if (error) console.error('Error adding tag:', error);
+  if (error) {
+    console.error('Error adding tag:', error);
+    throw error;
+  }
 }
 
 export async function updateTag(tag: Tag): Promise<void> {
