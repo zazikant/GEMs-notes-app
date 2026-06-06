@@ -154,18 +154,28 @@ function renderMarkdown(text: string): string {
   return html;
 }
 
-/** Renumber all top-level numbered items in text sequentially (1, 2, 3, …)
+/** Renumber top-level numbered items sequentially within each list block.
+ *  A "list block" is a consecutive run of numbered items, sub-bullets, and
+ *  blank lines. When a non-blank, non-numbered, non-sub-bullet line is
+ *  encountered, the counter resets — starting a new list at 1.
  *  Sub-bullet lines (indented `- ` or `* `) are left unchanged. */
 function renumberLists(text: string): string {
   const lines = text.split('\n');
   let counter = 0;
   for (let i = 0; i < lines.length; i++) {
     const m = lines[i].match(/^(\d+)\.\s+/);
+    const isSubBullet = /^\s+[-*]\s+/.test(lines[i]);
+
     if (m) {
       counter++;
       lines[i] = lines[i].replace(/^\d+\.\s+/, `${counter}. `);
+    } else if (!isSubBullet && lines[i].trim() !== '') {
+      // Non-numbered, non-sub-bullet, non-blank line → this is a text break
+      // that separates distinct lists, so reset the counter
+      counter = 0;
     }
-    // Lines that are sub-bullets (indented - or *) or non-numbered are skipped
+    // Blank lines and sub-bullets do NOT reset the counter — they're part of
+    // the current list block (standard markdown: blank line within a list is ok)
   }
   return lines.join('\n');
 }
