@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Note, Tag } from '@/types';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://sdrjqrlvttbyrtkppfam.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcmpxcmx2dHRieXJ0a3BwZmFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NzY0NzQsImV4cCI6MjA5NTI1MjQ3NH0.PyIMp2ukkzEFdVDVsz6Tw1GBC4vJwDeJhcBoKT6-bb0';
+// GEMs notes app — points at the project provisioned for zazikant/GEMs-notes-app.
+// Override at build/runtime with NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://elmaktrhsuxflypmczbe.supabase.co';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_KbkUZlFUAGjRRjlK2A6thQ_AVZIWH6T';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
